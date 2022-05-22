@@ -1,0 +1,51 @@
+form {
+    display: grid;
+    gap: .5rem;
+    flex-direction: row;
+    align-items: center;
+}
+
+form  > label {
+    border-color: var(--accent-color);
+    border-radius: var(--little-radius);
+    padding: var(--little-padding);
+    display: grid;
+    grid-auto-flow: column;
+    gap: 1rem;
+    width: 100%
+}
+
+form > label > input,
+form > label > select {
+    border-radius: var(--little-radius);
+    padding: var(--little-padding);
+    min-width: fit-content;
+    width: 13rem;
+    margin: auto 0 auto auto;
+    font-size: 1rem;
+    border-color: var(--accent-color);
+    background-color: var(--background-lev2);
+
+}
+
+form > label > input:focus {
+    outline: none;
+    background-color: var(--background-lev3);
+    border-color: greenyellow;
+}
+
+form > label > input:placeholder-shown {
+    color: darkgrey;
+}
+
+form > label > span {
+    width: fit-content;
+    text-align: left;
+    padding: var(--little-padding);
+    margin: auto auto auto 0;
+    font-size: 1rem;
+}
+
+form > .form-title {
+    font-size: 1.5rem;
+}
