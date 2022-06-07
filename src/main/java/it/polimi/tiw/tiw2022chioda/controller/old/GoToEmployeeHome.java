@@ -1,12 +1,9 @@
-package it.polimi.tiw.tiw2022chioda.controller;
+package it.polimi.tiw.tiw2022chioda.controller.old;
 
 import it.polimi.tiw.tiw2022chioda.bean.Estimate;
-import it.polimi.tiw.tiw2022chioda.bean.Option;
 import it.polimi.tiw.tiw2022chioda.bean.Product;
 import it.polimi.tiw.tiw2022chioda.bean.User;
-import it.polimi.tiw.tiw2022chioda.dao.AvailabilityDAO;
 import it.polimi.tiw.tiw2022chioda.dao.EstimateDAO;
-import it.polimi.tiw.tiw2022chioda.dao.OptionDAO;
 import it.polimi.tiw.tiw2022chioda.dao.ProductDAO;
 import it.polimi.tiw.tiw2022chioda.utils.ConnectionHandler;
 import it.polimi.tiw.tiw2022chioda.utils.ErrorSender;
@@ -25,18 +22,21 @@ import java.io.IOException;
 import java.io.Serial;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-@WebServlet(name = "GoToClientHome", value = "/GoToClientHome")
-public class GoToClientHome extends GoToHome {
+@WebServlet(name = "GoToEmployeeHome", value = "/GoToEmployeeHome")
+public class GoToEmployeeHome extends GoToHome {
 
-    private static final String clientHomePagePath = "WEB-INF/clientHomePage.html";
+    private static final String employeeHomePagePath = "WEB-INF/employeeHomePage.html";
 
     @Serial
     private static final long serialVersionUID = 1L;
     private TemplateEngine templateEngine;
     private Connection connection = null;
 
+
+    @Override
     public void init() throws ServletException {
         ServletContext servletContext = getServletContext();
         ServletContextTemplateResolver templateResolver = new ServletContextTemplateResolver(servletContext);
@@ -52,68 +52,38 @@ public class GoToClientHome extends GoToHome {
         HttpSession session = request.getSession();
         EstimateDAO estimateDAO = new EstimateDAO(connection);
         ProductDAO productDAO = new ProductDAO(connection);
-        AvailabilityDAO availabilityDAO = new AvailabilityDAO(connection);
-        OptionDAO optionDAO = new OptionDAO(connection);
         User user = (User) session.getAttribute("user");
-
-        List<Estimate> userEstimates = new ArrayList<>();
+        List<Estimate> pricedEstimates;
+        List<Estimate> notPricedEstimates;
         try {
-            userEstimates        = estimateDAO.getByUser(user);
+            pricedEstimates = estimateDAO.getByUser(user);
         } catch (SQLException e) {
-            ErrorSender.database(response, "getting user estimates");
+            ErrorSender.database(response, "getting estimates by user");
+            return;
+        }
+
+        try {
+            notPricedEstimates = estimateDAO.getNotPriced();
+        } catch (SQLException e) {
+            ErrorSender.database(response, "getting not priced estimates");
+            return;
         }
 
         List<Product> products = new ArrayList<>();
         try {
-            products  = productDAO.getAll();
+            products = productDAO.getAll();
         } catch (SQLException e) {
             ErrorSender.database(response, "getting products");
-        }
-
-        List<Option> optionsOfProduct = new ArrayList<>();
-        String chosenProduct = request.getParameter("productCode");
-
-        int productCode = -1;
-        Optional<Product> actualProduct = Optional.empty();
-
-        if (chosenProduct != null) {
-            try {
-                productCode = Integer.parseInt(chosenProduct);
-            } catch (NumberFormatException e){
-                ErrorSender.userNotNumber(response, "productCode");
-            }
-            try {
-                actualProduct = Optional.ofNullable(productDAO.getByCode(productCode));
-            } catch (SQLException e) {
-                ErrorSender.database(response, "getting the actual product");
-                return;
-            }
-            if(actualProduct.isEmpty()) {
-                ErrorSender.userWrongData(response, "No product has " + productCode + " as product code");
-                return;
-            } else {
-                try {
-                    List<Integer> optionCodes = availabilityDAO.getFromProduct(productCode);
-                    for (Integer optionCode : optionCodes) {
-                        optionsOfProduct.add(optionDAO.getFromCode(optionCode));
-                    }
-                } catch (SQLException e) {
-                    ErrorSender.database(response, "getting product's options");
-                    return;
-                }
-            }
+            return;
         }
 
         ServletContext servletContext = getServletContext();
         final WebContext ctx = new WebContext(request, response, servletContext, request.getLocale());
-        ctx.setVariable("estimates", userEstimates);
+        ctx.setVariable("pricedEstimates", pricedEstimates);
         ctx.setVariable("products", products);
-        ctx.setVariable("actualProductCode", productCode);
-        actualProduct.ifPresent(product -> {
-            ctx.setVariable("actualProduct", product);
-            ctx.setVariable("options", optionsOfProduct);});
+        ctx.setVariable("notPricedEstimates", notPricedEstimates);
         ctx.setVariable("user", user.getUsername());
-        templateEngine.process(clientHomePagePath, ctx, response.getWriter());
+        templateEngine.process(employeeHomePagePath, ctx, response.getWriter());
     }
 
     @Override

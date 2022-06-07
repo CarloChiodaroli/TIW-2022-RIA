@@ -86,6 +86,7 @@ h1 {
     animation-timing-function: var(--animation-curve);
     margin: auto;
     text-align: center;
+    cursor: pointer;
 }
 
 .my-button:hover {
@@ -94,4 +95,26 @@ h1 {
 
 .no-hover:hover {
     outline: initial;
+}
+
+section.error {
+    width: fit-content;
+    background-color: #5d0017;
+    color: #ff9fa6;
+    border-color: #ff000a;
+    display: flow;
+    gap: .5rem;
+}
+
+section.error > h2 {
+    size: 1.5em;
+    margin: auto;
+}
+
+.selected {
+    outline: 0.1rem solid var(--colored-text);
+}
+
+.hidden {
+    display: none;
 }

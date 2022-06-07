@@ -1,5 +1,7 @@
 package it.polimi.tiw.tiw2022chioda.controller;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import it.polimi.tiw.tiw2022chioda.bean.User;
 import it.polimi.tiw.tiw2022chioda.dao.UserDAO;
 import it.polimi.tiw.tiw2022chioda.enums.UserType;
@@ -8,6 +10,7 @@ import it.polimi.tiw.tiw2022chioda.utils.ErrorSender;
 import org.apache.commons.text.StringEscapeUtils;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -19,13 +22,16 @@ import java.util.Arrays;
 import java.util.regex.Pattern;
 
 @WebServlet(name = "CheckSignUp", value = "/CheckSignUp")
+@MultipartConfig
 public class CheckSignUp extends HttpServlet {
 
     private Connection connection;
+    private Gson gson;
 
     public void init() throws ServletException {
         System.out.println("CheckSignUp initialization");
         connection = ConnectionHandler.getConnection(getServletContext());
+        gson = new GsonBuilder().create();
     }
 
     @Override
@@ -102,10 +108,13 @@ public class CheckSignUp extends HttpServlet {
         }
         if (user == null) {
             ErrorSender.database(response);
-        } else {
-            request.getSession().setAttribute("user", user);
+            return;
         }
-        response.sendRedirect(getServletContext().getContextPath() + "/GoToHome");
+        request.getSession().setAttribute("user", user);
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().println(gson.toJson(user));
     }
 
     private boolean isEMail(String EMail) {

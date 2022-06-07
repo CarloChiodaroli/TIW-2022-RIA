@@ -8,6 +8,7 @@ import it.polimi.tiw.tiw2022chioda.utils.ConnectionHandler;
 import it.polimi.tiw.tiw2022chioda.utils.ErrorSender;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -17,6 +18,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 @WebServlet(name = "PriceEstimate", value = "/PriceEstimate")
+@MultipartConfig
 public class PriceEstimate extends HttpServlet {
 
     private Connection connection;

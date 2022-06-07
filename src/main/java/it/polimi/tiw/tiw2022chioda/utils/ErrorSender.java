@@ -10,7 +10,8 @@ public class ErrorSender {
     }
 
     public static void server(HttpServletResponse response, String message) throws IOException {
-        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal server error - Please retry");
+        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        response.getWriter().println(message);
     }
 
     public static void database(HttpServletResponse response) throws IOException {
@@ -22,7 +23,9 @@ public class ErrorSender {
     }
 
     public static void user(HttpServletResponse response, int sc, String message) throws IOException {
-        response.sendError(sc, message);
+        System.out.println(sc + ": " + message);
+        response.setStatus(sc);
+        response.getWriter().println(message);
     }
 
     public static void user(HttpServletResponse response, String message) throws IOException {
@@ -30,7 +33,7 @@ public class ErrorSender {
     }
 
     public static void userWrongData(HttpServletResponse response, String message) throws IOException {
-        user(response, message);
+        user(response, HttpServletResponse.SC_BAD_REQUEST, message);
     }
 
     public static void userNotNumber(HttpServletResponse response) throws IOException {

@@ -15,6 +15,7 @@ import org.thymeleaf.templateresolver.ServletContextTemplateResolver;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 
 @WebServlet(name = "EstimateDetail", value = "/EstimateDetail")
+@MultipartConfig
 public class EstimateDetail extends HttpServlet {
 
     private static final String productDetailPath = "WEB-INF/simpleDetail.html";
@@ -57,7 +59,6 @@ public class EstimateDetail extends HttpServlet {
         ProductDAO productDAO = new ProductDAO(connection);
         OptionDAO optionDAO = new OptionDAO(connection);
         UserDAO userDAO = new UserDAO(connection);
-        DecorDAO decorDAO = new DecorDAO(connection);
 
         User user = (User) session.getAttribute("user");
         String tmpEstCode = request.getParameter("estimateCode");
@@ -99,7 +100,7 @@ public class EstimateDetail extends HttpServlet {
 
         List<Integer> optionCodes;
         try {
-            optionCodes = decorDAO.getOptionCodesFromEstimateCode(estimateCode);
+            optionCodes = optionDAO.codesFromEstimate(estimateCode);
         } catch (SQLException e) {
             ErrorSender.database(response, "getting estimate's options");
             return;
@@ -112,7 +113,7 @@ public class EstimateDetail extends HttpServlet {
             try {
                 options.add(optionDAO.getFromCode(optionCode));
             } catch (SQLException e) {
-                ErrorSender.database(response, "getting option from ");
+                ErrorSender.database(response, "getting option from code");
                 return;
             }
         }

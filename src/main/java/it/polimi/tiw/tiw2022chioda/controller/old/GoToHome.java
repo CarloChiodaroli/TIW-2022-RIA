@@ -1,4 +1,4 @@
-package it.polimi.tiw.tiw2022chioda.controller;
+package it.polimi.tiw.tiw2022chioda.controller.old;
 
 import it.polimi.tiw.tiw2022chioda.bean.User;
 import it.polimi.tiw.tiw2022chioda.enums.UserType;

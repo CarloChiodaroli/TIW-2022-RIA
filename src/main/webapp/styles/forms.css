@@ -1,6 +1,6 @@
 form {
     display: grid;
-    gap: .5rem;
+    gap: .8rem;
     flex-direction: row;
     align-items: center;
     width: fit-content;
@@ -10,7 +10,7 @@ form {
 form > label {
     border-color: var(--accent-color);
     border-radius: var(--little-radius);
-    padding: var(--little-padding);
+    /*padding: var(--little-padding);*/
     display: grid;
     grid-auto-flow: column;
     gap: 1rem;
@@ -24,11 +24,16 @@ form > label > select {
     min-width: 13em;
     width: fit-content;
     margin: auto 0 auto auto;
+    color: black;
+}
+
+form > label > select > option {
+    background-color: inherit;
+    color: inherit;
 }
 
 form > label > input:focus {
     outline: none;
-    background-color: var(--background-lev3);
     border-color: greenyellow;
 }
 

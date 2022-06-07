@@ -6,9 +6,12 @@
     <link rel="stylesheet" type="text/css" media="all" href="styles/common.css"/>
     <link rel="stylesheet" type="text/css" media="all" href="styles/haf.css"/>
     <link rel="stylesheet" type="text/css" media="all" href="styles/forms.css"/>
+    <link rel="stylesheet" type="text/css" media="all" href="styles/login.css"/>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Monda&display=swap" rel="stylesheet">
+    <script src="scripts/common.js" charset="UTF-8" defer></script>
+    <script src="scripts/loginManager.js" charset="UTF-8" defer></script>
 </head>
 <body>
     <header>
@@ -16,23 +19,55 @@
     </header>
     <main>
         <h1>Welcome in Estimate Management</h1>
-        <section>
-            <form class="form-content" action="CheckLogin" method="POST">
+        <section class="error hidden" id="errorScreen">
+            <h2>Error: <span id="errorCode"></span></h2>
+            <span id="errorMessage"></span>
+        </section>
+        <nav>
+            <div class="my-button" id="showLogin">Login</div>
+            <div class="my-button" id="showSignUp">SignUp</div>
+        </nav>
+        <section id="loginContainer" class="hidden">
+            <form action=#>
                 <h2>User Login</h2>
                 <label title="Username">
                     <span>Username</span>
                     <input type="text" name="username" required>
                 </label>
-                <label title="Username">
+                <label title="Password">
                     <span>Password</span>
                     <input type="password" name="password" required>
                 </label>
-                <input class="my-button" type="submit" value="Login">
+                <input class="my-button submit-button" id="loginButton" type="submit" value="Login">
             </form>
         </section>
-        <section>
-            <span>Don't have an account?</span>
-            <a href="registerPage.html" class="my-button">Sign Up</a>
+        <section id="signUpContainer" class="hidden">
+            <form action=#>
+                <label>
+                    <span>Username</span>
+                    <input type="text" name="username" required>
+                </label>
+                <label>
+                    <span>E-Mail</span>
+                    <input type="email" name="email" required>
+                </label>
+                <label>
+                    <span>Password</span>
+                    <input type="password" name="password" required>
+                </label>
+                <label>
+                    <span>Repeat Password</span>
+                    <input type="password" name="rep-password" required>
+                </label>
+                <label>
+                    <span>userType</span>
+                    <select id="usertype">
+                        <option value="EMPLOYEE">Employee</option>
+                        <option value="CLIENT">Client</option>
+                    </select>
+                </label>
+                <input class="my-button submit-button" id="signUpButton" type="submit" value="Register">
+            </form>
         </section>
     </main>
     <footer>

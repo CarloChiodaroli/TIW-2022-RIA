@@ -1,6 +1,7 @@
 package it.polimi.tiw.tiw2022chioda.controller;
 
 import it.polimi.tiw.tiw2022chioda.bean.Estimate;
+import it.polimi.tiw.tiw2022chioda.bean.Option;
 import it.polimi.tiw.tiw2022chioda.bean.Product;
 import it.polimi.tiw.tiw2022chioda.bean.User;
 import it.polimi.tiw.tiw2022chioda.dao.*;
@@ -9,6 +10,7 @@ import it.polimi.tiw.tiw2022chioda.utils.ErrorSender;
 import org.apache.commons.text.StringEscapeUtils;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @WebServlet(name = "CreateEstimate", value = "/CreateEstimate")
+@MultipartConfig
 public class CreateEstimate extends HttpServlet {
 
     private Connection connection;
@@ -50,7 +53,7 @@ public class CreateEstimate extends HttpServlet {
 
         List<String> optionCode = List.of(optionCodes);
 
-        AvailabilityDAO availabilityDAO = new AvailabilityDAO(connection);
+        OptionDAO optionDAO = new OptionDAO(connection);
         EstimateDAO estimateDAO = new EstimateDAO(connection);
         ProductDAO productDAO = new ProductDAO(connection);
 
@@ -94,7 +97,7 @@ public class CreateEstimate extends HttpServlet {
 
         List<Integer> possibleOptCodes;
         try {
-            possibleOptCodes = availabilityDAO.getFromProduct(actualProduct.getCode());
+            possibleOptCodes = optionDAO.codesFromProduct(actualProduct.getCode());
         } catch (SQLException e){
             ErrorSender.database(response);
             return;

@@ -1,0 +1,9 @@
+main > nav {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+main > nav > .my-button {
+    margin: auto;
+}
