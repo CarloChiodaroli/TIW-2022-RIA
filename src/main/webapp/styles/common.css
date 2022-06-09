@@ -111,6 +111,10 @@ section.error > h2 {
     margin: auto;
 }
 
+.hover:hover {
+    outline: .1rem solid greenyellow;
+}
+
 .selected {
     outline: 0.1rem solid var(--colored-text);
 }

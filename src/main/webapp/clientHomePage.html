@@ -22,6 +22,10 @@
     </header>
     <main>
         <h1>Client Home Page</h1>
+        <section class="error hidden" id="errorScreen">
+            <h2>Error: <span id="errorCode"></span></h2>
+            <span id="errorMessage"></span>
+        </section>
         <section class="new-estimate-form">
             <form>
                 <h2>New Estimate form</h2>
@@ -36,13 +40,9 @@
                     <input class="my-button" type="button" name="next" value="Next">
                 </fieldset>
                 <fieldset>
-                    <dl>
-                        <div class="content no-hover">
-                            <img src="images/dbImages/keyboard_2328-fe0f.png">
-                            <span>Keyboard</span>
-                        </div>
+                    <dl id="option-list">
                         <span>Tik the checkbox on the side to choose at least one option</span>
-                        <dt class="content-row" id="option-list">
+                        <dt class="content-row">
                             <div>
                                 <span>000</span>
                                 <span class="headers">Code</span>
@@ -59,15 +59,17 @@
                                 <input type="checkbox" name="optionCode">
                             </div>
                         </dt>
+                    </dl>
+                    <div>
                         <input class="my-button" type="button" name="submit" value="Submit">
                         <input class="my-button" type="button" name="abort" value="Abort">
-                    </dl>
+                    </div>
                 </fieldset>
             </form>
         </section>
         <section>
-            <span class="table-title"></span>
-            <dl>
+            <h2>User Estimates</h2>
+            <dl id="userEstimatesList">
                 <dt>
                     <div>
                         <span>000</span>
@@ -86,10 +88,10 @@
                         <a class="my-button" id="showDetails">See details</a>
                     </div>
                 </dt>
+                <dt>
+                    <span>No estimates found</span>
+                </dt>
             </dl>
-            <div>
-                <span>No estimates found</span>
-            </div>
         </section>
     </main>
     <footer class="em-footer bar" th:fragment="fragment">

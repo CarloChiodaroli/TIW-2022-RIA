@@ -1,5 +1,7 @@
 package it.polimi.tiw.tiw2022chioda.controller;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import it.polimi.tiw.tiw2022chioda.bean.Estimate;
 import it.polimi.tiw.tiw2022chioda.bean.Option;
 import it.polimi.tiw.tiw2022chioda.bean.Product;
@@ -27,9 +29,11 @@ import java.util.stream.Collectors;
 public class CreateEstimate extends HttpServlet {
 
     private Connection connection;
+    private Gson gson;
 
     public void init() throws ServletException {
         connection = ConnectionHandler.getConnection(getServletContext());
+        gson = new GsonBuilder().setPrettyPrinting().create();
     }
 
     @Override
@@ -113,13 +117,17 @@ public class CreateEstimate extends HttpServlet {
         candidate.setProductCode(actualProduct.getCode());
         candidate.setOptionCodes(optCodes);
 
+        Estimate created;
         try{
-            estimateDAO.createEstimate(candidate, (User) session.getAttribute("user"));
+            created = estimateDAO.createEstimate(candidate, (User) session.getAttribute("user"));
         } catch (SQLException e){
             ErrorSender.database(response);
             return;
         }
 
-        response.sendRedirect(session.getServletContext().getContextPath() + "/GoToClientHome");
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().println(gson.toJson(created));
     }
 }

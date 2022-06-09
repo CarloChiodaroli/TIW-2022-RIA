@@ -32,7 +32,7 @@
                                     break
                             }
                         }
-                    }, false)
+                    }, true)
             } else {
                 form.reportValidity();
             }
@@ -50,11 +50,5 @@
             default :
                 document.getElementById('errormessage').textContent = "UserType was not recognized";
         }
-    }
-
-    function errorFromServer(code, message) {
-        document.getElementById('errorCode').textContent = code
-        document.getElementById('errorMessage').textContent = message;
-        document.getElementById("errorScreen").classList.remove("hidden");
     }
 }())

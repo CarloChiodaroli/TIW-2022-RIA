@@ -27,7 +27,7 @@ img {
     background-color: var(--background-lev2);
     width: fit-content;
     padding: 1rem;
-    margin: auto;
+    /*margin: auto;*/
     border-radius: var(--little-radius);
 }
 
@@ -35,18 +35,30 @@ img {
     margin: .5rem auto;
 }
 
-.content:hover {
-    outline: .1rem solid greenyellow;
-}
-
 .product-list {
-    display: flex;
+    display: inline-flex;
     align-self: center;
-    margin: .5rem;
     flex-wrap: wrap;
-    gap: 1rem;
+    width: 100%;
+    justify-content: space-evenly;
 }
 
 .em-table > span {
     margin: .5rem auto;
+}
+
+form > fieldset > div {
+    display: flex;
+    gap: 1rem;
+    width: fit-content;
+    height: fit-content;
+    margin: .5rem auto;
+}
+
+form > fieldset {
+    display: grid;
+    grid-template-columns: auto;
+    border: none;
+    padding: 0;
+    width: 100%;
 }
