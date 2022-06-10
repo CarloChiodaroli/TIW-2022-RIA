@@ -1,5 +1,7 @@
 package it.polimi.tiw.tiw2022chioda.controller;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import it.polimi.tiw.tiw2022chioda.bean.Estimate;
 import it.polimi.tiw.tiw2022chioda.bean.Option;
 import it.polimi.tiw.tiw2022chioda.bean.Product;
@@ -25,30 +27,20 @@ import java.io.IOException;
 import java.io.Serial;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @WebServlet(name = "EstimateDetail", value = "/EstimateDetail")
 @MultipartConfig
 public class EstimateDetail extends HttpServlet {
 
-    private static final String productDetailPath = "WEB-INF/simpleDetail.html";
-    private static final String priceEstimatePath = "WEB-INF/priceEstimate.html";
-
     @Serial
     private static final long serialVersionUID = 1L;
-    private TemplateEngine templateEngine;
     private Connection connection = null;
+    private Gson gson;
 
     public void init() throws ServletException {
-        ServletContext servletContext = getServletContext();
-        ServletContextTemplateResolver templateResolver = new ServletContextTemplateResolver(servletContext);
-        templateResolver.setTemplateMode(TemplateMode.HTML);
-        this.templateEngine = new TemplateEngine();
-        this.templateEngine.setTemplateResolver(templateResolver);
-        templateResolver.setSuffix(".html");
         connection = ConnectionHandler.getConnection(getServletContext());
+        gson = new GsonBuilder().setPrettyPrinting().create();
     }
 
     @Override
@@ -56,15 +48,12 @@ public class EstimateDetail extends HttpServlet {
         HttpSession session = request.getSession();
 
         EstimateDAO estimateDAO = new EstimateDAO(connection);
-        ProductDAO productDAO = new ProductDAO(connection);
         OptionDAO optionDAO = new OptionDAO(connection);
         UserDAO userDAO = new UserDAO(connection);
 
         User user = (User) session.getAttribute("user");
         String tmpEstCode = request.getParameter("estimateCode");
 
-        boolean priceEstimatePage = false;
-        boolean pricedEstimate = false;
         if (tmpEstCode == null || tmpEstCode.isEmpty()) {
             ErrorSender.userWrongData(response, "Got no Estimate Code");
             return;
@@ -88,16 +77,6 @@ public class EstimateDetail extends HttpServlet {
             return;
         }
 
-        pricedEstimate = !(baseEstimate.getEmployeeId() == 0);
-        if (!(baseEstimate.getClientId() == user.getID()) && !(baseEstimate.getEmployeeId() == user.getID())) {
-            if (user.getUserType().equals(UserType.EMPLOYEE) && baseEstimate.getPrice() == 0) {
-                priceEstimatePage = true; // Decide that this estimate is not priced and that actual user can price the estimate
-            } else {
-                ErrorSender.user(response, HttpServletResponse.SC_FORBIDDEN, "User cannot see this estimate's details");
-                return;
-            }
-        }
-
         List<Integer> optionCodes;
         try {
             optionCodes = optionDAO.codesFromEstimate(estimateCode);
@@ -107,24 +86,6 @@ public class EstimateDetail extends HttpServlet {
         }
 
         baseEstimate.setOptionCodes(optionCodes);
-
-        List<Option> options = new ArrayList<>();
-        for (int optionCode : baseEstimate.getOptionCodes()) {
-            try {
-                options.add(optionDAO.getFromCode(optionCode));
-            } catch (SQLException e) {
-                ErrorSender.database(response, "getting option from code");
-                return;
-            }
-        }
-
-        Product product;
-        try {
-            product = productDAO.getByCode(baseEstimate.getProductCode());
-        } catch (SQLException e) {
-            ErrorSender.database(response);
-            return;
-        }
 
         Optional<User> employee;
         User client;
@@ -146,17 +107,15 @@ public class EstimateDetail extends HttpServlet {
             }
         }
 
-        ServletContext servletContext = getServletContext();
-        final WebContext ctx = new WebContext(request, response, servletContext, request.getLocale());
-        ctx.setVariable("product", product);
-        ctx.setVariable("estimate", baseEstimate);
-        ctx.setVariable("options", options);
-        ctx.setVariable("canPrice", priceEstimatePage);
-        ctx.setVariable("client", client);
-        ctx.setVariable("priced", pricedEstimate);
-        ctx.setVariable("employee", employee.orElse(null));
-        if(priceEstimatePage) templateEngine.process(priceEstimatePath, ctx, response.getWriter());
-        else templateEngine.process(productDetailPath, ctx, response.getWriter());
+        Map<String, Object> estimateDetails = new HashMap<>();
+        estimateDetails.put("estimate", baseEstimate);
+        estimateDetails.put("employee", employee);
+        estimateDetails.put("client", client);
+
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().println(gson.toJson(estimateDetails));
     }
 
     @Override

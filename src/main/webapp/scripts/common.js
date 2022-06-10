@@ -15,6 +15,22 @@ function makeCall(method, url, formElement, cback, reset) {
     }
 }
 
+function requestManagement (req, positive, negative) {
+    if(req.readyState === XMLHttpRequest.DONE) {
+        let message = req.responseText;
+        switch (req.status) {
+            case 200:
+                //console.log(message);
+                let data = JSON.parse(message);
+                console.log(data);
+                positive(data);
+                break;
+            default:
+                negative(req.status, message);
+        }
+    }
+}
+
 function resetChoice (exclude) {
     let children = exclude.parentNode.querySelectorAll(":scope > div");
     for (let child of children) {
@@ -41,15 +57,16 @@ function hiddenCheckbox (name, value) {
     return input;
 }
 
-function optionLineComponent(caption, value){
+function optionLineComponent(caption, value, invert){
     let element = document.createElement("div");
     let valueElement = document.createElement("span");
     valueElement.textContent = value;
     let captionElement = document.createElement("span");
     captionElement.classList.add("headers");
     captionElement.textContent = caption;
-    element.appendChild(valueElement);
     element.appendChild(captionElement);
+    element.appendChild(valueElement);
+
     return element;
 }
 

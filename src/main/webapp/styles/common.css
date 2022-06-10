@@ -113,6 +113,7 @@ section.error > h2 {
 
 .hover:hover {
     outline: .1rem solid greenyellow;
+    cursor: pointer;
 }
 
 .selected {

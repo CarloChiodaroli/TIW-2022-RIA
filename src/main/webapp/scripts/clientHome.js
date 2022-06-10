@@ -13,10 +13,15 @@
         }
     }
 
-    function User() {
+    function SessionUser() {
         let user = JSON.parse(sessionStorage.getItem('user'))
+
         this.username = function () {
             return user.username
+        }
+
+        this.type = function () {
+            return user.userType;
         }
     }
 
@@ -74,14 +79,14 @@
             submitButton.addEventListener('click', (event) => {
                 console.log("Clicked submit button");
                 makeCall("POST", "CreateEstimate", optionFormPage.closest("form"), function (req) {
-                    if(req.readyState === XMLHttpRequest.DONE) {
+                    if (req.readyState === XMLHttpRequest.DONE) {
                         let message = req.responseText;
                         switch (req.status) {
                             case 200:
                                 console.log("Estimate saved well");
                                 pageOrchestrator.update();
                                 break;
-                            case 400| 401| 403| 404| 500:
+                            case 400 | 401 | 403 | 404 | 500:
                                 errorFromServer(req.status, message);
                                 break;
                         }
@@ -93,9 +98,9 @@
         }
 
         this.updatePage1 = function (self) {
-            productListPlace.innerHTML="";
+            productListPlace.innerHTML = "";
             let products = self.products();
-            if(products == null) return;
+            if (products == null) return;
             products.forEach(function (product) {
                 productListPlace.appendChild(productCard(product, (event) => {
                     let target = event.target;
@@ -115,13 +120,13 @@
             optionListPlace.innerHTML = "";
             let options = self.options();
             let possibleOptionCodes = self.available(actualProductCode);
-            if(possibleOptionCodes == null) return;
+            if (possibleOptionCodes == null) return;
             options.forEach(
                 function (option) {
-                    if(possibleOptionCodes.includes(option.code)){
+                    if (possibleOptionCodes.includes(option.code)) {
                         optionListPlace.appendChild(optionLine(option, (event) => {
                             let target = event.target;
-                            if(target.tagName !== "DT"){
+                            if (target.tagName !== "DT") {
                                 target = target.closest(".content-row");
                             }
                             setChoice(target);
@@ -132,13 +137,21 @@
         }
 
         this.products = function () {
-            console.log(data);
             return data.products;
         };
+
+        this.product = function (code) {
+            console.log(code);
+            return data.products.filter((prod) => prod.code === code)[0];
+        }
 
         this.options = function () {
             return data.options;
         };
+
+        this.option = function (code) {
+            return data.options.filter((opt) => opt.code === code)[0];
+        }
 
         this.available = function (productCode) {
             let map = data.availability;
@@ -157,7 +170,7 @@
         actualProductCode = productCode.value
     }
 
-    function EstimateList(_listContainer){
+    function EstimateList(_listContainer) {
 
         let listContainer = _listContainer;
         let data;
@@ -169,7 +182,6 @@
                     let message = req.responseText;
                     switch (req.status) {
                         case 200:
-                            console.log(message);
                             data = JSON.parse(message);
                             self.update(self);
                             break;
@@ -183,7 +195,7 @@
         this.update = function () {
             listContainer.classList.add("hidden");
             listContainer.innerHTML = "";
-            data.forEach((estimate) => listContainer.appendChild(estimateRow(estimate)))
+            data.forEach((estimate) => listContainer.appendChild(estimateRow(estimate)));
             listContainer.classList.remove("hidden");
         }
 
@@ -191,7 +203,7 @@
 
     function PageOrchestrator() {
 
-        let user = new User();
+        let user = new SessionUser();
         let productsAndOptions;
         let estimateList
 
@@ -216,6 +228,22 @@
             productsAndOptions.show();
             estimateList.show();
         };
+
+        this.showEstimateDetails = function (estimate, target) {
+            let url = "EstimateDetail?estimateCode=" + estimate.code;
+            makeCall("GET", url, null,
+                (req) => requestManagement(req,
+                    function (estimateDetail) {
+                        let optionList = [];
+                        estimateDetail.estimate.options.forEach((code) => optionList.push(productsAndOptions.option(code)));
+                        console.log(optionList);
+                        estimateDetailPane(estimateDetail, target,
+                            productsAndOptions.product(estimateDetail.estimate.product),
+                            optionList);
+                    },
+                    (status, message)  =>errorFromServer(status, message)
+                ), false);
+        }
     }
 
     let productCard = function (product, onClick) {
@@ -253,25 +281,82 @@
         return line;
     }
 
-    function estimateRow(estimate){
+    function estimateRow(estimate) {
         let line = document.createElement("dt");
         line.appendChild(optionLineComponent("Estimate Code", estimate.code));
         line.appendChild(optionLineComponent("Product Name", estimate.product));
-        if(estimate.employee === 0){
-            line.appendChild(optionLineComponent(null, "Not Priced"))
+        if (estimate.employee === 0) {
+            line.appendChild(optionLineComponent(null, "Not Priced"));
         } else {
             line.appendChild(optionLineComponent("Estimate Price", estimate.price));
         }
         line.addEventListener('click', (event) => {
             let target = event.target;
-            if(target.tagName !== "DT"){
+            if (target.tagName !== "DT") {
                 target = target.closest("dt");
             }
-            if(target.classList.contains("selected")) target.classList.remove("selected");
+            if (target.classList.contains("selected")) target.classList.remove("selected");
             else target.classList.add("selected");
+            pageOrchestrator.showEstimateDetails(estimate, target);
         })
         line.classList.add("hover");
         return line;
+    }
+
+    function estimateDetailPane(estimateDetail, place, product, options) {
+        console.log(product);
+        console.log(options);
+
+        let basePath = "images/dbImages/";
+        let pane = document.createElement("dt");
+        pane.classList.add("detail-Body");
+        let firstRow = document.createElement("div");
+        firstRow.classList.add("first-row");
+
+        let productView = document.createElement("div");
+        productView.classList.add("product-details");
+        let image = document.createElement("img")
+        image.src = basePath + product.image;
+        image.alt = "Image of" + product.name;
+        productView.appendChild(image);
+        productView.appendChild(optionLineComponent("Product name", product.name));
+        productView.appendChild(optionLineComponent("Product code", product.code));
+
+        let userView = document.createElement("div");
+        userView.classList.add("user-details");
+        let clientDetails = document.createElement("div");
+        clientDetails.appendChild(optionLineComponent("Client username: ", estimateDetail.client.username));
+        let pricingDetail = document.createElement("div");
+        if(estimateDetail.estimate.employee === 0){
+            pricingDetail.appendChild(optionLineComponent(null, "This estimate has not been priced yet"));
+        } else {
+            pricingDetail.appendChild(optionLineComponent("Priced by: ", estimateDetail.employee.username));
+            pricingDetail.appendChild(optionLineComponent("Price: ", estimateDetail.estimate.price));
+        }
+        userView.appendChild(clientDetails);
+        userView.appendChild(pricingDetail);
+
+        firstRow.appendChild(productView);
+        firstRow.appendChild(userView);
+
+        let optionList = document.createElement("dl");
+        let title = document.createElement("h2");
+        title.textContent = "With options";
+        title.classList.add("table-title");
+        optionList.appendChild(title)
+        options.forEach((option) => optionList.appendChild(optionLine(option, null)));
+        for (let child of optionList.children) {
+            child.classList.remove("hover");
+        }
+
+        let productTitle = document.createElement("h2");
+        productTitle.textContent = "Estimate with: ";
+        productTitle.classList.add("table-title");
+        pane.appendChild(productTitle);
+        pane.appendChild(firstRow);
+        pane.appendChild(optionList);
+
+        place.parentNode.insertBefore(pane, place.nextSibling);
     }
 
 }())

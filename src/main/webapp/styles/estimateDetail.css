@@ -1,17 +1,30 @@
-section {
+dt.detail-Body {
     display: flex;
     gap: .5rem;
     flex-direction: column;
+    padding: var(--little-padding);
+    width: fit-content;
+    align-self: center;
+    margin: auto;
 }
 
-section > span,
+dt.detail-Body > span,
 .em-table > span {
     font-size: 1.25rem;
+}
+
+dt.detail-Body > dl > dt {
+    background-color: var(--background-lev1);
 }
 
 .first-row {
     display: flex;
     gap: .5rem;
+    flex-direction: row;
+    width: 100%;
+    margin:auto;
+    background-color: var(--background-lev1);
+    border-radius: var(--little-radius);
 }
 
 .first-row > div {
@@ -21,26 +34,22 @@ section > span,
 
 .product-details {
     display: grid;
-    grid-template-columns: auto auto;
+    grid-template-columns: max-content max-content;
+    gap: 1rem;
     padding: .5rem;
     border-radius: var(--little-radius);
-    background-color: var(--background-lev2);
     width: fit-content;
 }
 
 .product-details > img {
-    grid-area: 1 / 1 / span 3 / span 1;
+    grid-area: 1 / 1 / span 2 / span 1;
     align-self: center;
-}
-
-.product-details > .product-title {
-    font-size: 1.25rem;
+    padding: var(--little-padding);
 }
 
 .product-details > div {
     display: grid;
     grid-auto-flow: row;
-    padding: .5rem;
     height: fit-content;
 }
 
@@ -61,7 +70,6 @@ section > span,
     gap: .5rem;
     padding: .5rem;
     border-radius: var(--little-radius);
-    background-color: var(--background-lev2);
     width: 100%;
 }
 
