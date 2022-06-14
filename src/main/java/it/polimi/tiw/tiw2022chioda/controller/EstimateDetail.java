@@ -109,7 +109,7 @@ public class EstimateDetail extends HttpServlet {
 
         Map<String, Object> estimateDetails = new HashMap<>();
         estimateDetails.put("estimate", baseEstimate);
-        estimateDetails.put("employee", employee);
+        estimateDetails.put("employee", employee.orElse(null));
         estimateDetails.put("client", client);
 
         response.setStatus(HttpServletResponse.SC_OK);

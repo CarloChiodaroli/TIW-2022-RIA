@@ -20,9 +20,8 @@ function requestManagement (req, positive, negative) {
         let message = req.responseText;
         switch (req.status) {
             case 200:
-                //console.log(message);
                 let data = JSON.parse(message);
-                console.log(data);
+                resetErrorFromServer();
                 positive(data);
                 break;
             default:
@@ -74,4 +73,15 @@ function errorFromServer(code, message) {
     document.getElementById('errorCode').textContent = code
     document.getElementById('errorMessage').textContent = message;
     document.getElementById("errorScreen").classList.remove("hidden");
+}
+
+function resetErrorFromServer(code, message) {
+    document.getElementById('errorScreen').classList.add("hidden");
+}
+
+function logOut(){
+    sessionStorage.removeItem("user");
+    makeCall("GET", "Logout", null, function (req) {
+        window.location.href = "";
+    }, false)
 }

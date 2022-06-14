@@ -13,6 +13,8 @@
         }
     }
 
+    // User Manager
+
     function SessionUser() {
         let user = JSON.parse(sessionStorage.getItem('user'))
 
@@ -23,7 +25,13 @@
         this.type = function () {
             return user.userType;
         }
+
+        this.present = function () {
+            return user != null;
+        }
     }
+
+    // --- Product and option Manager ---
 
     function ProductsAndOptions(_productListPlace, _optionListPlace) {
 
@@ -36,170 +44,182 @@
         let abortButton = optionFormPage.querySelector(':scope > div > input[name="abort"]');
         let data;
 
+        // Gets data from server
         this.show = function () {
-            let self = this;
-            makeCall("GET", "GetProductsAndOptions", null, (req) => {
-                if (req.readyState === XMLHttpRequest.DONE) {
-                    let message = req.responseText;
-                    switch (req.status) {
-                        case 200:
-                            data = JSON.parse(message);
-                            self.update(self);
-                            break;
-                        case 500:
-                            break;
-                    }
-                }
-            }, false)
+            makeCall("GET", "GetProductsAndOptions", null, (req) =>
+                    requestManagement(req,
+                        (received) => {
+                            data = received;
+                            this.update()
+                        },
+                        (code, message) => errorFromServer(code, message))
+                , false)
         }
 
-        this.update = function (self) {
+        // Initializes the form visualization
+        this.update = function update() {
             // preventive hiding
             productFormPage.classList.add("hidden");
             optionFormPage.classList.add("hidden");
             // initialization of form's page 1
-            this.updatePage1(self);
+            this.updatePage1();
 
             // initialization of pages buttons
+            // next button
             nextButton.addEventListener('click', (event) => {
-                console.log("clicked next button");
                 event.target.classList.add("hidden");
-                this.updatePage2(self);
                 optionFormPage.classList.remove("hidden");
             })
 
+            // abort button
             abortButton.addEventListener('click', (event) => {
                 console.log("Clicked abort button");
-                optionListPlace.innerHTML = "";
+                empty(optionListPlace);
                 optionListPlace.closest("fieldset").classList.add("hidden");
-                productFormPage.children.namedItem("next").classList.remove("hidden")
-                this.updatePage1(self);
+                productFormPage.children.namedItem("next").classList.remove("hidden");
+                this.updatePage1();
             })
 
+            // submit button
             submitButton.addEventListener('click', (event) => {
                 console.log("Clicked submit button");
-                makeCall("POST", "CreateEstimate", optionFormPage.closest("form"), function (req) {
-                    if (req.readyState === XMLHttpRequest.DONE) {
-                        let message = req.responseText;
-                        switch (req.status) {
-                            case 200:
-                                console.log("Estimate saved well");
-                                pageOrchestrator.update();
-                                break;
-                            case 400 | 401 | 403 | 404 | 500:
-                                errorFromServer(req.status, message);
-                                break;
-                        }
-                    }
-                }, false)
-            })
+                makeCall("POST", "CreateEstimate", optionFormPage.closest("form"),
+                    (req) => requestManagement(req,
+                        pageOrchestrator.update,
+                        (code, message) => errorFromServer(code, message)
+                        , true));
+                abortButton.dispatchEvent(new MouseEvent('click')); // Auto click to effectively reset the form.
+            });
             // showing form's first page
             productListPlace.closest("fieldset").classList.remove("hidden");
         }
 
-        this.updatePage1 = function (self) {
-            productListPlace.innerHTML = "";
-            let products = self.products();
-            if (products == null) return;
-            products.forEach(function (product) {
+        // Product list initialization
+        this.updatePage1 = () => {
+            empty(productListPlace);
+            let products = this.products();
+            // Do I have products?
+            if (products == null) {
+                return;
+            }
+            // Build singular Product card
+            products.forEach((product) => {
                 productListPlace.appendChild(productCard(product, (event) => {
+                    // listener function on click on a card
                     let target = event.target;
                     if (target.tagName !== "DIV") {
                         target = target.closest(".content");
                     }
-                    self.resetOptionList();
-                    setActualProduct(target.children[2]);
+                    empty(optionListPlace);
+                    setActualProduct(target.children[2]); // checking checkbox
                     resetChoice(target);
                     setChoice(target);
+                    this.updatePage2();
                 }));
             })
             nextButton.classList.remove("hidden");
         }
 
-        this.updatePage2 = function (self) {
-            optionListPlace.innerHTML = "";
-            let options = self.options();
-            let possibleOptionCodes = self.available(actualProductCode);
-            if (possibleOptionCodes == null) return;
-            options.forEach(
-                function (option) {
+        // Option list initialization
+        this.updatePage2 = () => {
+            empty(optionListPlace);
+            let options = this.options();
+            let possibleOptionCodes = this.available(actualProductCode);
+            // there are no options available for actual product
+            if (possibleOptionCodes == null) {
+                return;
+            }
+            // for every single option
+            options.forEach((option) => {
+                // is this option's code in the available for actual product?
                     if (possibleOptionCodes.includes(option.code)) {
+                        // Yes it is so append a new line to the list
                         optionListPlace.appendChild(optionLine(option, (event) => {
+                            // listener function on click of an option
                             let target = event.target;
                             if (target.tagName !== "DT") {
                                 target = target.closest(".content-row");
                             }
                             setChoice(target);
                         }));
-                    }
+                    } // No so don't do anything
                 }
             )
         }
 
+        // exposes the whole products list
         this.products = function () {
             return data.products;
         };
 
+        // gives a product from its code
         this.product = function (code) {
-            console.log(code);
             return data.products.filter((prod) => prod.code === code)[0];
         }
 
+        // exposes the whole option list
         this.options = function () {
             return data.options;
         };
 
+        // gives an option form a code
         this.option = function (code) {
             return data.options.filter((opt) => opt.code === code)[0];
         }
 
+        // gives the list of the available products
         this.available = function (productCode) {
             let map = data.availability;
             return map[productCode];
         };
 
-        this.resetOptionList = function () {
-            optionListPlace.innerHTML = "";
+        let actualProductCode;
+
+        let setActualProduct = function (productCode) {
+            actualProductCode = productCode.value
         }
-
     }
 
-    let actualProductCode;
-
-    let setActualProduct = function (productCode) {
-        actualProductCode = productCode.value
-    }
+    // --- Estimate List Manager
 
     function EstimateList(_listContainer) {
 
         let listContainer = _listContainer;
-        let data;
+        let estimateList;
 
-        this.show = function () {
-            let self = this;
+        // gets data from the server
+        this.update = function () {
             makeCall("GET", "GetUserEstimates", null, (req) => {
-                if (req.readyState === XMLHttpRequest.DONE) {
-                    let message = req.responseText;
-                    switch (req.status) {
-                        case 200:
-                            data = JSON.parse(message);
-                            self.update(self);
-                            break;
-                        case 500:
-                            break;
-                    }
-                }
+                requestManagement(req, function (data) {
+                        estimateList = data;
+                        show();
+                    },
+                    (code, message) => errorFromServer(code, message))
             }, false)
         }
 
-        this.update = function () {
+        // shows the data on screen
+        function show() {
             listContainer.classList.add("hidden");
-            listContainer.innerHTML = "";
-            data.forEach((estimate) => listContainer.appendChild(estimateRow(estimate)));
+            empty(listContainer);
+            estimateList.forEach((estimate) => listContainer.appendChild(estimateRow(estimate)));
             listContainer.classList.remove("hidden");
         }
 
+        // resets the option list view, needed to remove estimate details from screen
+        this.resetView = function () {
+            let detailLeft = document.getElementById("estimateDetail");
+            let row = null;
+            if (detailLeft !== null) {
+                row = detailLeft.previousElementSibling;
+                row.classList.remove("selected");
+                detailLeft.remove();
+            }
+            return row;
+        }
     }
+
+    // --- Page Orchestrator ---
 
     function PageOrchestrator() {
 
@@ -208,6 +228,11 @@
         let estimateList
 
         this.initialize = function () {
+
+            if (!user.present()) {
+                window.location.href = "";
+            }
+
             let message = new WelcomeMessage(
                 user.username(),
                 document.getElementById('usernameWelcome'));
@@ -220,33 +245,44 @@
             estimateList = new EstimateList(
                 document.getElementById("userEstimatesList"));
 
+            let logoutButton = document.getElementById("logout-button");
+            logoutButton.addEventListener('click', logOut);
+
             productsAndOptions.show();
-            estimateList.show();
+            estimateList.update();
         }
 
         this.update = function () {
             productsAndOptions.show();
-            estimateList.show();
+            estimateList.update();
         };
 
+        // gets estimate details from database and shows them on screen
         this.showEstimateDetails = function (estimate, target) {
+            let oldSelection = estimateList.resetView();
+            console.log(oldSelection);
+            console.log(target);
+            if (oldSelection === target) return;
             let url = "EstimateDetail?estimateCode=" + estimate.code;
             makeCall("GET", url, null,
                 (req) => requestManagement(req,
                     function (estimateDetail) {
                         let optionList = [];
+                        estimateList.resetView();
                         estimateDetail.estimate.options.forEach((code) => optionList.push(productsAndOptions.option(code)));
                         console.log(optionList);
                         estimateDetailPane(estimateDetail, target,
                             productsAndOptions.product(estimateDetail.estimate.product),
                             optionList);
                     },
-                    (status, message)  =>errorFromServer(status, message)
+                    (status, message) => errorFromServer(status, message)
                 ), false);
         }
     }
 
-    let productCard = function (product, onClick) {
+    // Graphical rendering
+
+    function productCard(product, onClick) {
         let basePath = "images/dbImages/";
         let baseId = "product_";
         let inputName = "productCode";
@@ -266,7 +302,7 @@
         return card;
     }
 
-    let optionLine = function (option, onClick) {
+    function optionLine(option, onClick) {
         let baseId = "option_";
         let inputName = "optionCode";
         let line = document.createElement("dt");
@@ -295,8 +331,9 @@
             if (target.tagName !== "DT") {
                 target = target.closest("dt");
             }
-            if (target.classList.contains("selected")) target.classList.remove("selected");
-            else target.classList.add("selected");
+            if (target.classList.contains("selected")) {
+                target.classList.remove("selected");
+            } else target.classList.add("selected");
             pageOrchestrator.showEstimateDetails(estimate, target);
         })
         line.classList.add("hover");
@@ -304,11 +341,9 @@
     }
 
     function estimateDetailPane(estimateDetail, place, product, options) {
-        console.log(product);
-        console.log(options);
-
         let basePath = "images/dbImages/";
         let pane = document.createElement("dt");
+        pane.id = "estimateDetail";
         pane.classList.add("detail-Body");
         let firstRow = document.createElement("div");
         firstRow.classList.add("first-row");
@@ -327,7 +362,7 @@
         let clientDetails = document.createElement("div");
         clientDetails.appendChild(optionLineComponent("Client username: ", estimateDetail.client.username));
         let pricingDetail = document.createElement("div");
-        if(estimateDetail.estimate.employee === 0){
+        if (estimateDetail.estimate.employee === 0) {
             pricingDetail.appendChild(optionLineComponent(null, "This estimate has not been priced yet"));
         } else {
             pricingDetail.appendChild(optionLineComponent("Priced by: ", estimateDetail.employee.username));
@@ -359,4 +394,7 @@
         place.parentNode.insertBefore(pane, place.nextSibling);
     }
 
+    function empty(place) {
+        place.innerHTML = "";
+    }
 }())
