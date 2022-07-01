@@ -53,7 +53,7 @@ main {
     margin: 5em auto;
 }
 
-main > section {
+section {
     display: flex;
     flex-direction: column;
     gap: 1em;
@@ -109,6 +109,12 @@ section.error {
 section.error > h2 {
     size: 1.5em;
     margin: auto;
+}
+
+section.green {
+    background-color: #225d00;
+    color: #d1ff9f;
+    border-color: #08ff00;
 }
 
 .hover:hover {

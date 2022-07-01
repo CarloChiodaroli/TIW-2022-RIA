@@ -1,4 +1,5 @@
 function makeCall(method, url, formElement, cback, reset) {
+    resetErrorFromServer();
     let req = new XMLHttpRequest();
     req.onreadystatechange = function () {
         cback(req);
@@ -8,6 +9,7 @@ function makeCall(method, url, formElement, cback, reset) {
         req.send();
     } else {
         let gino = new FormData(formElement);
+        console.log(formElement);
         req.send(gino)
     }
     if (formElement !== null && reset === true) {
@@ -21,7 +23,6 @@ function requestManagement (req, positive, negative) {
         switch (req.status) {
             case 200:
                 let data = JSON.parse(message);
-                resetErrorFromServer();
                 positive(data);
                 break;
             default:
@@ -70,18 +71,20 @@ function optionLineComponent(caption, value, invert){
 }
 
 function errorFromServer(code, message) {
+    console.log(code, message, "gino");
     document.getElementById('errorCode').textContent = code
     document.getElementById('errorMessage').textContent = message;
     document.getElementById("errorScreen").classList.remove("hidden");
 }
 
-function resetErrorFromServer(code, message) {
+function resetErrorFromServer() {
+    document.getElementById("errorScreen").classList.remove("green");
     document.getElementById('errorScreen').classList.add("hidden");
 }
 
 function logOut(){
-    sessionStorage.removeItem("user");
+    sessionStorage.removeItem('user');
     makeCall("GET", "Logout", null, function (req) {
-        window.location.href = "";
+        window.location.href = window.location.pathname.substring(0, window.location.pathname.substring(1).indexOf("/") + 1);
     }, false)
 }

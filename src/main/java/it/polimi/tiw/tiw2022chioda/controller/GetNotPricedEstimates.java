@@ -2,8 +2,10 @@ package it.polimi.tiw.tiw2022chioda.controller;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import it.polimi.tiw.tiw2022chioda.bean.Estimate;
 import it.polimi.tiw.tiw2022chioda.bean.Option;
 import it.polimi.tiw.tiw2022chioda.bean.Product;
+import it.polimi.tiw.tiw2022chioda.dao.EstimateDAO;
 import it.polimi.tiw.tiw2022chioda.dao.OptionDAO;
 import it.polimi.tiw.tiw2022chioda.dao.ProductDAO;
 import it.polimi.tiw.tiw2022chioda.utils.ConnectionHandler;
@@ -38,7 +40,19 @@ public class GetNotPricedEstimates extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        EstimateDAO estimateDAO = new EstimateDAO(connection);
+        List<Estimate> notPricedEstimates = new ArrayList<>();
 
+        try {
+            notPricedEstimates = estimateDAO.getNotPriced();
+        } catch (SQLException e) {
+            ErrorSender.database(response, "getting not priced estimates");
+        }
+
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().println(gson.toJson(notPricedEstimates));
     }
 
     @Override

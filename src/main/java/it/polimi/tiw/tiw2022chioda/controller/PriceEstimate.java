@@ -1,5 +1,7 @@
 package it.polimi.tiw.tiw2022chioda.controller;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import it.polimi.tiw.tiw2022chioda.bean.Estimate;
 import it.polimi.tiw.tiw2022chioda.bean.User;
 import it.polimi.tiw.tiw2022chioda.dao.EstimateDAO;
@@ -22,14 +24,16 @@ import java.sql.SQLException;
 public class PriceEstimate extends HttpServlet {
 
     private Connection connection;
+    private Gson gson;
 
     public void init() throws ServletException {
-        System.out.println("CheckSignUp initialization");
         connection = ConnectionHandler.getConnection(getServletContext());
+        gson = new GsonBuilder().setPrettyPrinting().create();
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        System.out.println("gino");
         ErrorSender.wrongHttp(response, "Get");
     }
 
@@ -101,7 +105,16 @@ public class PriceEstimate extends HttpServlet {
             return;
         }
 
-        String path = getServletContext().getContextPath() + "/GoToEmployeeHome";
-        response.sendRedirect(path);
+        try{
+            estimate = estimateDAO.getByCode(estimateCode);
+        } catch(SQLException e){
+            ErrorSender.database(response, "saving price");
+            return;
+        }
+
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().println(gson.toJson(estimate));
     }
 }
