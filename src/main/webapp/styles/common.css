@@ -102,6 +102,8 @@ section.error {
     background-color: #5d0017;
     color: #ff9fa6;
     border-color: #ff000a;
+    border-width: 3px;
+    border-style: solid;
     display: flow;
     gap: .5rem;
 }

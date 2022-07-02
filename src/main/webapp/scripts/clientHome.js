@@ -83,9 +83,11 @@
             // submit button
             submitButton.addEventListener('click', (event) => {
                 console.log("Clicked submit button");
+                if(!this.checkDataCorrectness()) return;
                 makeCall("POST", "CreateEstimate", optionFormPage.closest("form"),
-                    (req) => requestManagement(req,
-                        pageOrchestrator.update,
+                    (req) => requestManagement(req, () => {
+                            pageOrchestrator.update();
+                        },
                         (code, message) => errorFromServer(code, message)
                         , true));
                 abortButton.dispatchEvent(new MouseEvent('click')); // Auto click to effectively reset the form.
@@ -131,7 +133,7 @@
             }
             // for every single option
             options.forEach((option) => {
-                // is this option's code in the available for actual product?
+                    // is this option's code in the available for actual product?
                     if (possibleOptionCodes.includes(option.code)) {
                         // Yes it is so append a new line to the list
                         optionListPlace.appendChild(optionLine(option, (event) => {
@@ -145,6 +147,33 @@
                     } // No so don't do anything
                 }
             )
+        }
+
+        this.checkDataCorrectness = () => {
+            let formData = new FormData(optionFormPage.closest("form"))
+            let productCode
+            if(formData.get("productCode") === null) {
+                errorFromServer("None", "You need to choose a product");
+                return false;
+            } else {
+                productCode = formData.get("productCode");
+            }
+            let options;
+            if(formData.get("optionCode") === null) {
+                errorFromServer("None", "You need to select at least one option");
+                return false;
+            } else {
+                options = this.available(productCode);
+            }
+            let seenNotPresent = false;
+            formData.getAll("optionCode").forEach((code) =>{
+                if(!seenNotPresent) seenNotPresent = !options.includes(parseInt(code));
+            })
+            if(seenNotPresent) {
+                errorFromServer("None", "An option is not available for the selected product");
+                return false;
+            }
+            return true;
         }
 
         // exposes the whole products list

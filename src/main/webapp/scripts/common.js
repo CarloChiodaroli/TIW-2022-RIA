@@ -71,7 +71,6 @@ function optionLineComponent(caption, value, invert){
 }
 
 function errorFromServer(code, message) {
-    console.log(code, message, "gino");
     document.getElementById('errorCode').textContent = code
     document.getElementById('errorMessage').textContent = message;
     document.getElementById("errorScreen").classList.remove("hidden");

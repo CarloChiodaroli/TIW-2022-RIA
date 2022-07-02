@@ -102,10 +102,17 @@
         let show = () => {
             listContainer.classList.add("hidden");
             empty(listContainer);
-            if(price === true){
-                estimateList.forEach((estimate) => listContainer.appendChild(estimateRow(estimate, getPriceEstimateForm, this.resetView)));
+            console.log(estimateList);
+            if(estimateList.length === 0){
+                let text = document.createElement("h3");
+                text.textContent = "No estimates found";
+                listContainer.appendChild(text);
             } else {
-                estimateList.forEach((estimate) => listContainer.appendChild(estimateRow(estimate, null, this.resetView)));
+                if (price === true) {
+                    estimateList.forEach((estimate) => listContainer.appendChild(estimateRow(estimate, getPriceEstimateForm, this.resetView)));
+                } else {
+                    estimateList.forEach((estimate) => listContainer.appendChild(estimateRow(estimate, null, this.resetView)));
+                }
             }
             listContainer.classList.remove("hidden");
         }
@@ -120,6 +127,26 @@
                 detailLeft.remove();
             }
             return row;
+        }
+
+        this.containsCode = function (code) {
+            let estimateCodes = estimateList.map((estimate) => estimate.code);
+            return estimateCodes.includes(parseInt(code));
+        }
+
+        this.removeEstimate = function (estimateCode) {
+            let estimateToRemove;
+            console.log(estimateList)
+            estimateList.forEach((estimate) => {
+                if(estimate.code === estimateCode) estimateToRemove = estimateList.indexOf(estimate);
+            })
+            estimateList.splice(estimateToRemove, 1);
+            show();
+        }
+
+        this.addEstimate = function (estimate) {
+            estimateList.unshift(estimate);
+            show();
         }
     }
 
@@ -181,6 +208,15 @@
                     (status, message) => errorFromServer(status, message)
                 ), false);
         }
+
+        this.isNotPriced = function (estimateCode) {
+            return notPricedEstimateList.containsCode(estimateCode);
+        }
+
+        this.priced = function (data) {
+            notPricedEstimateList.removeEstimate(data.code);
+            myEstimateList.addEstimate(data);
+        }
     }
 
     // Graphical rendering
@@ -200,7 +236,7 @@
         return line;
     }
 
-    function estimateRow(estimate, formBuilder,  resetView) {
+    function estimateRow(estimate, formBuilder, resetView) {
         let line = document.createElement("dt");
         line.appendChild(optionLineComponent("Estimate Code", estimate.code));
         line.appendChild(optionLineComponent("Product Name", estimate.product));
@@ -273,7 +309,7 @@
         pane.appendChild(productTitle);
         pane.appendChild(firstRow);
         pane.appendChild(optionList);
-        if(formBuilder !== null){
+        if (formBuilder !== null) {
             let title = document.createElement("h2");
             title.textContent = "Price Estimate Form";
             title.classList.add("table-title");
@@ -284,7 +320,7 @@
         place.parentNode.insertBefore(pane, place.nextSibling);
     }
 
-    function getPriceEstimateForm(estimateDetail){
+    function getPriceEstimateForm(estimateDetail) {
         console.log(estimateDetail);
         console.log(user);
         let form = document.createElement("form");
@@ -304,36 +340,98 @@
         let priceInfo = document.createElement("input");
         priceInfo.type = "number";
         priceInfo.step = "0.01";
+        priceInfo.min = "0.01";
         priceInfo.name = "price";
         priceInfo.required = true;
         priceInfoLabel.appendChild(priceHeader);
         priceInfoLabel.appendChild(priceInfo);
+        let submitDiv = document.createElement("div");
         let submitButton = document.createElement("input");
-        submitButton.type = "submit";
+        submitButton.type = "button";
         submitButton.name = "submit";
         submitButton.value = "Submit";
         submitButton.classList.add("my-button");
+        submitDiv.appendChild(submitButton);
         form.appendChild(employeeInfo);
         form.appendChild(estimateInfo);
         form.appendChild(priceInfoLabel);
-        form.appendChild(submitButton);
+        form.appendChild(submitDiv);
         submitButton.addEventListener('click', (event) => {
             let selected = event.target.closest('form');
-            console.log(event.target);
-            console.log(selected);
-            makeCall('POST', "PriceEstimate", selected, (req) =>
-                requestManagement(req,
-                    (data) => {
-                    pageOrchestrator.update();
-                        document.getElementById("errorScreen").classList.add("green");
-                        document.getElementById('errorCode').textContent = "200"
-                        document.getElementById('errorMessage').textContent = "Estimate " + data.code + " priced successfully";
-                        document.getElementById("errorScreen").classList.remove("hidden");
-                    },
-                    (code, message) => errorFromServer(code, message)), true)
+            if (formCorrectness(selected))
+                makeCall('POST', "PriceEstimate", selected, (req) =>
+                    requestManagement(req,
+                        (data) => {
+                            pageOrchestrator.priced(data);
+                            document.getElementById("errorScreen").classList.add("green");
+                            document.getElementById('errorCode').textContent = "200"
+                            document.getElementById('errorMessage').textContent = "Estimate " + data.code + " priced successfully";
+                            document.getElementById("errorScreen").classList.remove("hidden");
+                        },
+                        (code, message) => errorFromServer(code, message)), true)
         })
         let section = document.createElement("section");
-        section.appendChild(form)
+
+        function formCorrectness(form) {
+            let formData = new FormData(form);
+
+            let employeeId = formData.get("employeeId");
+            let estimateCode = formData.get("estimateCode");
+            let price = formData.get("price");
+
+            if (price === null   || price.length === 0) {
+                errorFromServer("Error", "No Price given");
+                return false;
+            }
+            if (estimateCode === null || estimateCode.length === 0){
+                errorFromServer("Error", "No Estimate code given");
+                return false;
+            }
+            if (employeeId === null || employeeId.length === 0){
+                errorFromServer("Error", "No Employee Id given");
+                return false;
+            }
+
+            price = parseInt(price);
+            employeeId = parseInt(employeeId);
+            estimateCode = parseInt(estimateCode);
+
+            if (isNaN(price)){
+                errorFromServer("Error", "Given price is not a number");
+                return false;
+            }
+            if (isNaN(employeeId)){
+                errorFromServer("Error", "Given employee id is not a number");
+                return false;
+            }
+            if (isNaN(estimateCode)){
+                errorFromServer("Error", "Given estimate code not a number");
+                return false;
+            }
+
+            if (employeeId !== user.id) {
+                errorFromServer("Error", "Wrong user Id");
+                return false;
+            }
+
+            if (!pageOrchestrator.isNotPriced(estimateCode)) {
+                errorFromServer("Error", "Given Estimate Id is not in not priced estimates");
+                return false;
+            }
+
+            if (price == null) {
+                errorFromServer("Error", "No price has been given");
+                return false;
+            }
+
+            if (price <= 0) {
+                errorFromServer("Error", "Given price was zero or negative");
+                return false;
+            }
+            return true;
+        }
+
+        section.appendChild(form);
         return section;
     }
 
