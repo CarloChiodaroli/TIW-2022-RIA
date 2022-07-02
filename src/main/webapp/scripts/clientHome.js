@@ -1,6 +1,7 @@
 (function () {
 
     let pageOrchestrator = new PageOrchestrator();
+    let user = new SessionUser();
 
     window.addEventListener('load', () => {
         pageOrchestrator.initialize();
@@ -18,13 +19,15 @@
     function SessionUser() {
         let user = JSON.parse(sessionStorage.getItem('user'))
 
-        this.username = function () {
-            return user.username
+        if (user === null || user.userType !== "CLIENT") {
+            logOut();
         }
 
-        this.type = function () {
-            return user.userType;
-        }
+        this.username = user.username;
+
+        this.id = user.ID;
+
+        this.type = user.userType;
 
         this.present = function () {
             return user != null;
@@ -258,12 +261,8 @@
 
         this.initialize = function () {
 
-            if (!user.present()) {
-                window.location.href = "";
-            }
-
             let message = new WelcomeMessage(
-                user.username(),
+                user.username,
                 document.getElementById('usernameWelcome'));
             message.show();
 

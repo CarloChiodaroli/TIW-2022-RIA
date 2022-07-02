@@ -19,7 +19,8 @@
     function SessionUser() {
         let user = JSON.parse(sessionStorage.getItem('user'))
 
-        if (user === null) {
+        if (user === null || user.userType !== "EMPLOYEE") {
+            console.log(user, this.type);
             logOut();
         }
 
@@ -27,9 +28,7 @@
 
         this.id = user.ID;
 
-        this.type = function () {
-            return user.userType;
-        }
+        this.type = user.userType;
 
         this.present = function () {
             return user != null;
