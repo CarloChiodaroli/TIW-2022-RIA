@@ -29,7 +29,6 @@ public class CheckSignUp extends HttpServlet {
     private Gson gson;
 
     public void init() throws ServletException {
-        System.out.println("CheckSignUp initialization");
         connection = ConnectionHandler.getConnection(getServletContext());
         gson = new GsonBuilder().create();
     }
@@ -41,7 +40,6 @@ public class CheckSignUp extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        System.out.println("CheckSignUp got Post");
         String username = null;
         String password = null;
         String repeatedPassword = null;
@@ -81,7 +79,9 @@ public class CheckSignUp extends HttpServlet {
             return;
         }
         String userTypeForLambda = userType;
-        if(Arrays.stream(UserType.values()).map(x -> toString()).noneMatch(x -> x.equals(userTypeForLambda))){
+        if(Arrays.stream(UserType.values())
+                .map(Enum::toString)
+                .noneMatch(x -> x.equals(userTypeForLambda))){
             ErrorSender.userWrongData(response, "Got wrong user type");
             return;
         }
@@ -122,6 +122,6 @@ public class CheckSignUp extends HttpServlet {
     }
 
     private boolean isPassword(String password) {
-        return password.matches("^(?=.*[A-Z].*[A-Z])(?=.*[!@#$&*])(?=.*[0-9].*[0-9])(?=.*[a-z].*[a-z].*[a-z]).{8}$");
+        return password.matches("^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8}.*");
     }
 }

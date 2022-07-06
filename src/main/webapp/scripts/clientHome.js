@@ -86,14 +86,15 @@
             // submit button
             submitButton.addEventListener('click', (event) => {
                 console.log("Clicked submit button");
-                if(!this.checkDataCorrectness()) return;
-                makeCall("POST", "CreateEstimate", optionFormPage.closest("form"),
-                    (req) => requestManagement(req, () => {
-                            pageOrchestrator.update();
-                        },
-                        (code, message) => errorFromServer(code, message)
-                        , true));
-                abortButton.dispatchEvent(new MouseEvent('click')); // Auto click to effectively reset the form.
+                if (this.checkDataCorrectness()) {
+                    makeCall("POST", "CreateEstimate", optionFormPage.closest("form"),
+                        (req) => requestManagement(req, () => {
+                                pageOrchestrator.update();
+                            },
+                            (code, message) => errorFromServer(code, message)
+                            , true));
+                    abortButton.dispatchEvent(new MouseEvent('click')); // Auto click to effectively reset the form.
+                }
             });
             // showing form's first page
             productListPlace.closest("fieldset").classList.remove("hidden");
@@ -155,25 +156,25 @@
         this.checkDataCorrectness = () => {
             let formData = new FormData(optionFormPage.closest("form"))
             let productCode
-            if(formData.get("productCode") === null) {
-                errorFromServer("None", "You need to choose a product");
+            if (formData.get("productCode") === null) {
+                errorFromServer("Error", "You need to choose a product");
                 return false;
             } else {
                 productCode = formData.get("productCode");
             }
             let options;
-            if(formData.get("optionCode") === null) {
-                errorFromServer("None", "You need to select at least one option");
+            if (formData.get("optionCode") === null) {
+                errorFromServer("Error", "You need to select at least one option");
                 return false;
             } else {
                 options = this.available(productCode);
             }
             let seenNotPresent = false;
-            formData.getAll("optionCode").forEach((code) =>{
-                if(!seenNotPresent) seenNotPresent = !options.includes(parseInt(code));
+            formData.getAll("optionCode").forEach((code) => {
+                if (!seenNotPresent) seenNotPresent = !options.includes(parseInt(code));
             })
-            if(seenNotPresent) {
-                errorFromServer("None", "An option is not available for the selected product");
+            if (seenNotPresent) {
+                errorFromServer("Error", "An option is not available for the selected product");
                 return false;
             }
             return true;
@@ -234,7 +235,13 @@
         function show() {
             listContainer.classList.add("hidden");
             empty(listContainer);
-            estimateList.forEach((estimate) => listContainer.appendChild(estimateRow(estimate)));
+            if (estimateList.length === 0) {
+                let text = document.createElement("h3");
+                text.textContent = "No estimates found";
+                listContainer.appendChild(text);
+            } else {
+                estimateList.forEach((estimate) => listContainer.appendChild(estimateRow(estimate)));
+            }
             listContainer.classList.remove("hidden");
         }
 
@@ -251,41 +258,11 @@
         }
     }
 
-    // --- Page Orchestrator ---
+    function EstimateDetails (_estimateList, _productsAndOptions) {
 
-    function PageOrchestrator() {
+        let estimateList = _estimateList;
+        let productsAndOptions = _productsAndOptions;
 
-        let user = new SessionUser();
-        let productsAndOptions;
-        let estimateList
-
-        this.initialize = function () {
-
-            let message = new WelcomeMessage(
-                user.username,
-                document.getElementById('usernameWelcome'));
-            message.show();
-
-            productsAndOptions = new ProductsAndOptions(
-                document.getElementById("product-list"),
-                document.getElementById("option-list"));
-
-            estimateList = new EstimateList(
-                document.getElementById("userEstimatesList"));
-
-            let logoutButton = document.getElementById("logout-button");
-            logoutButton.addEventListener('click', logOut);
-
-            productsAndOptions.show();
-            estimateList.update();
-        }
-
-        this.update = function () {
-            productsAndOptions.show();
-            estimateList.update();
-        };
-
-        // gets estimate details from database and shows them on screen
         this.showEstimateDetails = function (estimate, target) {
             let oldSelection = estimateList.resetView();
             console.log(oldSelection);
@@ -306,6 +283,49 @@
                     (status, message) => errorFromServer(status, message)
                 ), false);
         }
+    }
+
+
+
+    // --- Page Orchestrator ---
+
+    function PageOrchestrator() {
+
+        let user = new SessionUser();
+        let productsAndOptions;
+        let estimateList;
+        let estimateDetail;
+
+        this.initialize = function () {
+
+            let message = new WelcomeMessage(
+                user.username,
+                document.getElementById('usernameWelcome'));
+            message.show();
+
+            productsAndOptions = new ProductsAndOptions(
+                document.getElementById("product-list"),
+                document.getElementById("option-list"));
+
+            estimateList = new EstimateList(
+                document.getElementById("userEstimatesList"));
+
+            let logoutButton = document.getElementById("logout-button");
+            logoutButton.addEventListener('click', logOut);
+
+            estimateDetail = new EstimateDetails(estimateList, productsAndOptions);
+
+            productsAndOptions.show();
+            estimateList.update();
+        }
+
+        this.update = function () {
+            productsAndOptions.show();
+            estimateList.update();
+        };
+
+        // gets estimate details from database and shows them on screen
+        this.showEstimateDetails = (estimate, target) => estimateDetail.showEstimateDetails(estimate, target);
     }
 
     // Graphical rendering

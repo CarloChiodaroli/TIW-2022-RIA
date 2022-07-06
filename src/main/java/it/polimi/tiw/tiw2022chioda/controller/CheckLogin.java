@@ -36,7 +36,6 @@ public class CheckLogin extends HttpServlet {
     }
 
     public void init() throws ServletException {
-        System.out.println("CheckLogin initialization");
         connection = ConnectionHandler.getConnection(getServletContext());
         gson = new GsonBuilder().setPrettyPrinting().create();
     }
@@ -49,7 +48,6 @@ public class CheckLogin extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        System.out.println("CheckLogin started");
 
         String username = null;
         String password = null;
@@ -60,7 +58,6 @@ public class CheckLogin extends HttpServlet {
                 password == null ||
                 username.isEmpty() ||
                 password.isEmpty()){
-            System.out.println("CheckLogin got empty Credentials");
             ErrorSender.userWrongData(response, "Credentials must be not empty");
             return;
         }

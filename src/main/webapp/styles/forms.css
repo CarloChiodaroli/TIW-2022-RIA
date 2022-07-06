@@ -16,6 +16,11 @@ form > label {
     width: 100%;
 }
 
+input:invalid {
+    background-color: pink;
+    color: crimson;
+}
+
 form > label > input,
 form > label > select {
     border-radius: var(--little-radius);

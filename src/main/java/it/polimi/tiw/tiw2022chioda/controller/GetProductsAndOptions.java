@@ -31,7 +31,6 @@ public class GetProductsAndOptions extends HttpServlet {
     private Gson gson;
 
     public void init() throws ServletException {
-        System.out.println("CheckLogin initialization");
         connection = ConnectionHandler.getConnection(getServletContext());
         gson = new GsonBuilder().setPrettyPrinting().create();
     }

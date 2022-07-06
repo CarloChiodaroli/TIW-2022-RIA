@@ -79,7 +79,7 @@
         };
     }
 
-    // --- Estimate List Manager
+    // --- Estimate List Manager ---
 
     function EstimateList(_listContainer, kindOfList, price) {
 
@@ -102,7 +102,7 @@
             listContainer.classList.add("hidden");
             empty(listContainer);
             console.log(estimateList);
-            if(estimateList.length === 0){
+            if (estimateList.length === 0) {
                 let text = document.createElement("h3");
                 text.textContent = "No estimates found";
                 listContainer.appendChild(text);
@@ -128,66 +128,50 @@
             return row;
         }
 
+        // control if a certain estimate is contained in this estimate list
         this.containsCode = function (code) {
             let estimateCodes = estimateList.map((estimate) => estimate.code);
             return estimateCodes.includes(parseInt(code));
         }
 
+        // removes an estimate from this estimate list
         this.removeEstimate = function (estimateCode) {
             let estimateToRemove;
             console.log(estimateList)
             estimateList.forEach((estimate) => {
-                if(estimate.code === estimateCode) estimateToRemove = estimateList.indexOf(estimate);
+                if (estimate.code === estimateCode) estimateToRemove = estimateList.indexOf(estimate);
             })
             estimateList.splice(estimateToRemove, 1);
             show();
         }
 
+        // adds an estimate in this estimate list
         this.addEstimate = function (estimate) {
             estimateList.unshift(estimate);
             show();
         }
     }
 
-    // --- Page Orchestrator ---
-
-    function PageOrchestrator() {
-
-        let productsAndOptions;
-        let myEstimateList
-        let notPricedEstimateList;
-
-        this.initialize = function () {
-
-            let message = new WelcomeMessage(
-                user.username,
-                document.getElementById('usernameWelcome'));
-            message.show();
-
-            productsAndOptions = new ProductsAndOptions(
-                document.getElementById("product-list"),
-                document.getElementById("option-list"));
-
-            myEstimateList = new EstimateList(
-                document.getElementById("userEstimatesList"), "GetUserEstimates", false);
-
-            notPricedEstimateList = new EstimateList(
-                document.getElementById("notPricedList"), "GetNotPricedEstimates", true)
-
-            let logoutButton = document.getElementById("logout-button");
-            logoutButton.addEventListener('click', logOut);
-
-            productsAndOptions.getInfo();
-            myEstimateList.update();
-            notPricedEstimateList.update();
+    function priceEstimateCall(form){
+        if (form.checkValidity()) {
+            makeCall('POST', "PriceEstimate", form, (req) =>
+                requestManagement(req,
+                    (data) => {
+                        pageOrchestrator.priced(data);
+                        document.getElementById("errorScreen").classList.add("green");
+                        document.getElementById('errorCode').textContent = "200"
+                        document.getElementById('errorMessage').textContent = "Estimate " + data.code + " priced successfully";
+                        document.getElementById("errorScreen").classList.remove("hidden");
+                    },
+                    (code, message) => errorFromServer(code, message)), true);
+        } else {
+            form.reportValidity();
         }
+    }
 
-        this.update = function () {
-            myEstimateList.update();
-            notPricedEstimateList.update();
-        };
+    function EstimateDetail(_productsAndOptions) {
+        let productsAndOptions = _productsAndOptions;
 
-        // gets estimate details from database and shows them on screen
         this.showEstimateDetails = function (estimate, target, form, resetView) {
             let oldSelection = resetView();
             console.log(oldSelection);
@@ -207,15 +191,70 @@
                     (status, message) => errorFromServer(status, message)
                 ), false);
         }
+    }
 
+    // --- Page Orchestrator ---
+
+    function PageOrchestrator() {
+
+        let productsAndOptions;
+        let myEstimateList
+        let notPricedEstimateList;
+        let estimateDetail;
+
+        this.initialize = function () {
+
+            // sets name on the header
+            let message = new WelcomeMessage(
+                user.username,
+                document.getElementById('usernameWelcome'));
+            message.show();
+
+            // gets useful product and option data
+            productsAndOptions = new ProductsAndOptions(
+                document.getElementById("product-list"),
+                document.getElementById("option-list"));
+
+            // creates an estimate list with previously priced estimates by user
+            myEstimateList = new EstimateList(
+                document.getElementById("userEstimatesList"), "GetUserEstimates", false);
+
+            // creates an estimate list with not priced estimates
+            notPricedEstimateList = new EstimateList(
+                document.getElementById("notPricedList"), "GetNotPricedEstimates", true)
+
+            // adds logic behind logOut button in header
+            let logoutButton = document.getElementById("logout-button");
+            logoutButton.addEventListener('click', logOut);
+
+            estimateDetail = new EstimateDetail(productsAndOptions);
+
+            productsAndOptions.getInfo();
+            this.update();
+        }
+
+        // updates list contents
+        this.update = function () {
+            myEstimateList.update();
+            notPricedEstimateList.update();
+        };
+
+        // gets estimate details from database and shows them on screen
+        this.showEstimateDetails =
+            (estimate, target, form, resetView) => estimateDetail.showEstimateDetails(estimate, target, form, resetView)
+
+        // check if a certain estimate code represents an estimate in the not priced estimate list
         this.isNotPriced = function (estimateCode) {
             return notPricedEstimateList.containsCode(estimateCode);
         }
 
+        // called by price estimate form submit button to move the newly priced estimate from the not priced estimates
+        // to the my priced estimate list
         this.priced = function (data) {
             notPricedEstimateList.removeEstimate(data.code);
             myEstimateList.addEstimate(data);
         }
+
     }
 
     // Graphical rendering
@@ -278,7 +317,11 @@
         let userView = document.createElement("div");
         userView.classList.add("user-details");
         let clientDetails = document.createElement("div");
-        clientDetails.appendChild(optionLineComponent("Client username: ", estimateDetail.client.username));
+        if (estimateDetail.client !== undefined) {
+            clientDetails.appendChild(optionLineComponent("Client username: ", estimateDetail.client.username));
+        } else {
+            clientDetails.appendChild(optionLineComponent("Client username: ", "Not known"));
+        }
         let pricingDetail = document.createElement("div");
         if (estimateDetail.estimate.employee === 0) {
             pricingDetail.appendChild(optionLineComponent(null, "This estimate has not been priced yet"));
@@ -323,6 +366,7 @@
         console.log(estimateDetail);
         console.log(user);
         let form = document.createElement("form");
+        form.action = "#";
         let employeeInfo = document.createElement("input");
         employeeInfo.type = "hidden";
         employeeInfo.name = "employeeId";
@@ -338,9 +382,9 @@
         priceHeader.textContent = "Price: ";
         let priceInfo = document.createElement("input");
         priceInfo.type = "number";
+        priceInfo.name = "price";
         priceInfo.step = "0.01";
         priceInfo.min = "0.01";
-        priceInfo.name = "price";
         priceInfo.required = true;
         priceInfoLabel.appendChild(priceHeader);
         priceInfoLabel.appendChild(priceInfo);
@@ -354,81 +398,12 @@
         form.appendChild(employeeInfo);
         form.appendChild(estimateInfo);
         form.appendChild(priceInfoLabel);
-        form.appendChild(submitDiv);
+        form.appendChild(submitButton);
         submitButton.addEventListener('click', (event) => {
             let selected = event.target.closest('form');
-            if (formCorrectness(selected))
-                makeCall('POST', "PriceEstimate", selected, (req) =>
-                    requestManagement(req,
-                        (data) => {
-                            pageOrchestrator.priced(data);
-                            document.getElementById("errorScreen").classList.add("green");
-                            document.getElementById('errorCode').textContent = "200"
-                            document.getElementById('errorMessage').textContent = "Estimate " + data.code + " priced successfully";
-                            document.getElementById("errorScreen").classList.remove("hidden");
-                        },
-                        (code, message) => errorFromServer(code, message)), true)
-        })
+            priceEstimateCall(selected);
+        });
         let section = document.createElement("section");
-
-        function formCorrectness(form) {
-            let formData = new FormData(form);
-
-            let employeeId = formData.get("employeeId");
-            let estimateCode = formData.get("estimateCode");
-            let price = formData.get("price");
-
-            if (price === null   || price.length === 0) {
-                errorFromServer("Error", "No Price given");
-                return false;
-            }
-            if (estimateCode === null || estimateCode.length === 0){
-                errorFromServer("Error", "No Estimate code given");
-                return false;
-            }
-            if (employeeId === null || employeeId.length === 0){
-                errorFromServer("Error", "No Employee Id given");
-                return false;
-            }
-
-            price = parseInt(price);
-            employeeId = parseInt(employeeId);
-            estimateCode = parseInt(estimateCode);
-
-            if (isNaN(price)){
-                errorFromServer("Error", "Given price is not a number");
-                return false;
-            }
-            if (isNaN(employeeId)){
-                errorFromServer("Error", "Given employee id is not a number");
-                return false;
-            }
-            if (isNaN(estimateCode)){
-                errorFromServer("Error", "Given estimate code not a number");
-                return false;
-            }
-
-            if (employeeId !== user.id) {
-                errorFromServer("Error", "Wrong user Id");
-                return false;
-            }
-
-            if (!pageOrchestrator.isNotPriced(estimateCode)) {
-                errorFromServer("Error", "Given Estimate Id is not in not priced estimates");
-                return false;
-            }
-
-            if (price == null) {
-                errorFromServer("Error", "No price has been given");
-                return false;
-            }
-
-            if (price <= 0) {
-                errorFromServer("Error", "Given price was zero or negative");
-                return false;
-            }
-            return true;
-        }
 
         section.appendChild(form);
         return section;

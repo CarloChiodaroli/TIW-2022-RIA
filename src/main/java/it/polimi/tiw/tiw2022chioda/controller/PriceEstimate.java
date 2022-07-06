@@ -33,7 +33,6 @@ public class PriceEstimate extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        System.out.println("gino");
         ErrorSender.wrongHttp(response, "Get");
     }
 

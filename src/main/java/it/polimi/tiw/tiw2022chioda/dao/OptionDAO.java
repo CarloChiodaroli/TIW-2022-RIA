@@ -18,7 +18,7 @@ public class OptionDAO extends DAO {
 
     public List<Option> getAll() throws SQLException {
         String query = "SELECT CODE, NAME, TYPE " +
-                "FROM OPT";
+                "ROM OPT";
         PreparedStatement preparedStatement = super.prepareQuery(query);
         ResultSet resultSet = super.coreQueryExecutor(preparedStatement);
         List<Option> result = new ArrayList<>();
