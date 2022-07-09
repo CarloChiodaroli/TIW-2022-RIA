@@ -39,20 +39,20 @@
     <filter-mapping>
         <filter-name>LoginChecker</filter-name>
         <url-pattern>/GoToHome</url-pattern>
-        <url-pattern>/GoToClientHome</url-pattern>
-        <url-pattern>/GoToEmployeeHome</url-pattern>
+        <url-pattern>/GoUserEstimate</url-pattern>
+        <url-pattern>/GetNotPricedEstimates</url-pattern>
+        <url-pattern>/GetProductsAndOptions</url-pattern>
         <url-pattern>/EstimateDetail</url-pattern>
         <url-pattern>/CreateEstimate</url-pattern>
         <url-pattern>/PriceEstimate</url-pattern>
     </filter-mapping>
     <filter-mapping>
         <filter-name>ClientChecker</filter-name>
-        <url-pattern>/GoToClientHome</url-pattern>
         <url-pattern>/CreateEstimate</url-pattern>
     </filter-mapping>
     <filter-mapping>
         <filter-name>EmployeeChecker</filter-name>
-        <url-pattern>/GoToEmployeeHome</url-pattern>
+        <url-pattern>/GetNotPricedEstimates</url-pattern>
         <url-pattern>/PriceEstimate</url-pattern>
     </filter-mapping>
     <welcome-file-list>
