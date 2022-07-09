@@ -116,8 +116,14 @@
                     if (target.tagName !== "DIV") {
                         target = target.closest(".content");
                     }
+                    if(target.children[2].value === actualProductCode){
+                        abortButton.dispatchEvent(new MouseEvent('click'));
+                        resetChoice(target);
+                        actualProductCode = -1;
+                        return;
+                    }
                     empty(optionListPlace);
-                    setActualProduct(target.children[2]); // checking checkbox
+                    setActualProduct(target.children[2]);
                     resetChoice(target);
                     setChoice(target);
                     this.updatePage2();
@@ -206,7 +212,7 @@
             return map[productCode];
         };
 
-        let actualProductCode;
+        let actualProductCode = -1;
 
         let setActualProduct = function (productCode) {
             actualProductCode = productCode.value
@@ -413,7 +419,11 @@
         if (estimateDetail.estimate.employee === 0) {
             pricingDetail.appendChild(optionLineComponent(null, "This estimate has not been priced yet"));
         } else {
-            pricingDetail.appendChild(optionLineComponent("Priced by: ", estimateDetail.employee.username));
+            if(estimateDetail.employee.username == null){
+                pricingDetail.appendChild(optionLineComponent("Priced by: ", "Not known"));
+            } else {
+                pricingDetail.appendChild(optionLineComponent("Priced by: ", estimateDetail.employee.username));
+            }
             pricingDetail.appendChild(optionLineComponent("Price: ", estimateDetail.estimate.price));
         }
         userView.appendChild(clientDetails);
